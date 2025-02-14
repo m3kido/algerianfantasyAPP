@@ -1,26 +1,11 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import 'package:provider/provider.dart';
-import '../providers/user_provider.dart';
-
-void main() {
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const LoginScreen(),
-    );
-  }
-}
+import '../widgets/customTextField.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final VoidCallback onToggle;
+  const LoginScreen({super.key, required this.onToggle});
 
   @override
   LoginScreenState createState() => LoginScreenState();
@@ -31,18 +16,15 @@ class LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final AuthService authService = AuthService();
 
-  // Error messages
   String? emailAddressError;
   String? passwordError;
-
   bool isLoading = false;
+  bool isPasswordVisible = false;
 
   void validateInputs() {
     setState(() {
-      emailAddressError =
-          emailController.text.isEmpty ? "Email is required" : null;
-      passwordError =
-          passwordController.text.isEmpty ? "Password is required" : null;
+      emailAddressError = emailController.text.isEmpty ? "Email is required" : null;
+      passwordError = passwordController.text.isEmpty ? "Password is required" : null;
     });
 
     if (emailAddressError == null && passwordError == null) {
@@ -55,31 +37,39 @@ class LoginScreenState extends State<LoginScreen> {
       isLoading = true;
     });
 
-    final result = await authService.signIn(
+    String? error = await authService.signIn(
       emailController.text.trim(),
       passwordController.text.trim(),
     );
 
-    if (!mounted) return; // Check if the widget is still mounted
+    if (!mounted) return;
 
     setState(() {
       isLoading = false;
     });
 
-    if (result["error"] == true) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(result["message"])));
+    if (error != null) {
+      _showSnackbar(error, Colors.red);
     } else {
-      final token = result["token"];
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login successful! Token: $token")),
-      );
-      var user = result['user'];
+      _showSnackbar("Login successful!", Colors.green);
 
-      // Set user in UserProvider
-      Provider.of<UserProvider>(context, listen: false).setUser(user!);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
     }
+  }
+
+  void _showSnackbar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: color,
+      ),
+    );
   }
 
   @override
@@ -92,10 +82,7 @@ class LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0F0D2A), // Dark color at the top
-              Color(0xFF201A71), // Blue color at the bottom
-            ],
+            colors: [Color(0xFF0F0D2A), Color(0xFF201A71)],
           ),
         ),
         child: Center(
@@ -105,7 +92,7 @@ class LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
-                  'assets/logo.png', // Replace with actual logo path
+                  'assets/logo.png',
                   height: 100,
                 ),
                 const SizedBox(height: 40),
@@ -119,9 +106,20 @@ class LoginScreenState extends State<LoginScreen> {
                 CustomTextField(
                   hintText: 'Enter your password',
                   icon: Icons.lock,
-                  isPassword: true,
+                  isPassword: !isPasswordVisible,
                   controller: passwordController,
                   errorText: passwordError,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        isPasswordVisible = !isPasswordVisible;
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(height: 30),
                 SizedBox(
@@ -136,15 +134,12 @@ class LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     onPressed: validateInputs,
-                    child:
-                        isLoading
-                            ? const CircularProgressIndicator(
-                              color: Colors.white,
-                            )
-                            : const Text(
-                              'Log in',
-                              style: TextStyle(fontSize: 18),
-                            ),
+                    child: isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                      'Log in',
+                      style: TextStyle(fontSize: 18),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -152,13 +147,13 @@ class LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'Forgot password?',
+                      "Don't have an account?",
                       style: TextStyle(color: Colors.white70),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: widget.onToggle,
                       child: const Text(
-                        ' sign up',
+                        ' Sign Up',
                         style: TextStyle(
                           color: Colors.blueAccent,
                           fontWeight: FontWeight.bold,
@@ -171,55 +166,6 @@ class LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class CustomTextField extends StatelessWidget {
-  final String hintText;
-  final IconData icon;
-  final bool isPassword;
-  final TextEditingController controller;
-  final String? errorText;
-
-  const CustomTextField({
-    required this.hintText,
-    required this.icon,
-    this.isPassword = false,
-    required this.controller,
-    this.errorText,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Color(0xFF979595)),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(color: Color(0xFF979595)),
-        filled: true,
-        fillColor: const Color(0xFFEDEFFF),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30.0),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          vertical: 16.0,
-          horizontal: 20.0,
-        ),
-        suffixIcon: Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: Icon(icon, color: Color(0xFF979595)),
-        ),
-        suffixIconConstraints: const BoxConstraints(
-          minWidth: 40,
-          minHeight: 40,
-        ),
-        errorText: errorText,
       ),
     );
   }

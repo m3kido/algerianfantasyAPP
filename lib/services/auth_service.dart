@@ -1,113 +1,58 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<Map<String, dynamic>> signUp(String email, String password, String username, String phone) async {
+  /// 🔹 **Inscription avec email & mot de passe**
+  Future<String?> signUp(String email, String password) async {
     try {
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-
-      User? user = userCredential.user;
-      if (user != null) {
-        // Create a Firestore user document
-        UserModel newUser = UserModel(
-          uid: user.uid,
-          username: username,
-          email: email,
-          phone: phone,
-          balance: 200.0, // Default balance
-        );
-
-        await _firestore.collection('users').doc(user.uid).set(newUser.toJson());
-
-        return {
-          "error": false,
-          "user": newUser,
-          "message": "User registered successfully!",
-        };
-      }
-
-      return {
-        "error": true,
-        "message": "User creation failed.",
-      };
+      return null; // Succès (pas d'erreur)
     } on FirebaseAuthException catch (e) {
-      String errorMessage = "An error occurred.";
-      if (e.code == 'email-already-in-use') {
-        errorMessage = "This email is already in use.";
-      } else if (e.code == 'weak-password') {
-        errorMessage = "The password is too weak.";
-      }
-
-      return {
-        "error": true,
-        "message": errorMessage,
-      };
+      return _handleAuthError(e);
     } catch (e) {
-      return {
-        "error": true,
-        "message": e.toString(),
-      };
+      return "An unexpected error occurred.";
     }
   }
 
-
-  Future<Map<String, dynamic>> signIn(String email, String password) async {
+  /// 🔹 **Connexion avec email & mot de passe**
+  Future<String?> signIn(String email, String password) async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      User? user = userCredential.user;
-      if (user != null) {
-        DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          UserModel userModel = UserModel.fromJson(doc.data() as Map<String, dynamic>);
-          return {
-            "error": false,
-            "user": userModel,  // You can return the full user object
-            "token": await user.getIdToken(), // Firebase token
-          };
-        }
-
-      }
-
-      return {
-        "error": true,
-        "message": "User not found in the database.",
-      };
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+      return null; // Succès
+    } on FirebaseAuthException catch (e) {
+      return _handleAuthError(e);
     } catch (e) {
-      return {
-        "error": true,
-        "message": e.toString(),
-      };
+      return "An unexpected error occurred.";
     }
   }
 
-
-
-
+  /// 🔹 **Déconnexion**
   Future<void> signOut() async {
     await _auth.signOut();
   }
 
+  /// 🔹 **Récupérer l'utilisateur actuellement connecté**
+  User? getCurrentUser() {
+    return _auth.currentUser;
+  }
 
-  Future<UserModel?> getCurrentUser() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        return UserModel.fromJson(doc.data() as Map<String, dynamic>);
-      }
+  /// 🔹 **Gérer les erreurs Firebase**
+  String _handleAuthError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'email-already-in-use':
+        return "This email is already in use.";
+      case 'weak-password':
+        return "The password is too weak.";
+      case 'user-not-found':
+        return "No user found with this email.";
+      case 'wrong-password':
+        return "Incorrect password.";
+      default:
+        return "An error occurred. Please try again.";
     }
-    return null;
   }
 }

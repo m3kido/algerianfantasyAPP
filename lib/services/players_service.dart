@@ -13,15 +13,28 @@ class PlayerService {
           .collection('players')
           .where('club', isEqualTo: clubName)
           .where('position', isEqualTo: position)
-          .orderBy('price', descending: true) // Trie par prix décroissant
+          .orderBy('price', descending: true)
           .get();
 
+      if (querySnapshot.docs.isEmpty) {
+        print("⚠️ No players found for $clubName - $position");
+        return [];
+      }
+
       return querySnapshot.docs.map((doc) {
-        return PlayerModel.fromJson(doc.data() as Map<String, dynamic>);
+        final data = doc.data() as Map<String, dynamic>;
+
+        if (!data.containsKey("name") || !data.containsKey("price")) {
+          print("❌ Corrupt document found: ${doc.id}");
+          print("Data: $data");
+        }
+
+        return PlayerModel.fromJson(data);
       }).toList();
     } catch (e) {
-      print("Erreur lors de la récupération des joueurs : $e");
+      print("🔥 Firestore Error: $e");
       return [];
     }
   }
-}
+  }
+

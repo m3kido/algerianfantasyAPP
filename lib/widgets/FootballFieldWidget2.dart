@@ -1,9 +1,36 @@
+import 'package:algerianfantasy/models/player_model.dart';
 import 'package:flutter/material.dart';
 import 'spot_widget.dart';
 
-class FootballFieldWidget2 extends StatelessWidget {
-  const FootballFieldWidget2({super.key});
+class FootballFieldWidget2 extends StatefulWidget {
+  final Function() getBalance;
+  final Function(double) subtractBalance;
+  final Function() SetUnready;
+  final Function(List<PlayerModel>) SetReady;
+  const FootballFieldWidget2({super.key, required this.getBalance, required this.subtractBalance, required this.SetUnready, required this.SetReady});
 
+  @override
+  State<FootballFieldWidget2> createState() => _FootballFieldWidget2State();
+}
+
+class _FootballFieldWidget2State extends State<FootballFieldWidget2> {
+  List<PlayerModel> players=[];
+  void addplayer(PlayerModel player){
+    setState(() {
+      players.add(player);
+    });
+    if(players.length==11){
+      widget.SetReady( players);
+    }
+  }
+  void removeplayer(PlayerModel player){
+    setState(() {
+      players.remove(player);
+    });
+    if(players.length<11){
+      widget.SetUnready();
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -26,19 +53,20 @@ class FootballFieldWidget2 extends StatelessWidget {
             ),
 
             // 🏃‍♂️ Positions des joueurs
-            const SpotWidget(position: "GK", left: 125, top: 460),
-            const SpotWidget(position: "DF", left: 25, top: 370),
-            const SpotWidget(position: "DF", left: 125, top: 370),
-            const SpotWidget(position: "DF", left: 225, top: 370),
-            const SpotWidget(position: "MF", left: 45, top: 220),
-            const SpotWidget(position: "MF", left: 90, top: 290),
-            const SpotWidget(position: "MF", left: 155, top: 290),
-            const SpotWidget(position: "MF", left: 205, top: 220),
-            const SpotWidget(position: "MF", left: 125, top: 170),
-            const SpotWidget(position: "FW", left: 60, top: 70),
-            const SpotWidget(position: "FW", left: 190, top: 70),
+            SpotWidget(position: "GK", left: 125, top: 460,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "DF", left: 25, top: 370,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "DF", left: 125, top: 370,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "DF", left: 225, top: 370,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "MF", left: 45, top: 220,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "MF", left: 90, top: 290,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "MF", left: 155, top: 290,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "MF", left: 205, top: 220,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "MF", left: 125, top: 170,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "FW", left: 60, top: 70,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
+            SpotWidget(position: "FW", left: 190, top: 70,subtractBalance:widget.subtractBalance,getBalance: widget.getBalance,addplayer: addplayer,removeplayer:removeplayer),
 
           ],
         ));
   }
 }
+

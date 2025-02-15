@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../models/player_model.dart';
 import '../widgets/home_widget.dart';
 import '../widgets/leaderboard_widget.dart';
+import 'match_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,15 +13,32 @@ class HomeScreen extends StatefulWidget {
 
 class HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
+  bool ready=true;
+  List<PlayerModel> userPlayers=[];
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
-
+  void SetReady(List<PlayerModel> players){
+    setState(() {
+      print("hohoho");
+      ready = true;
+      userPlayers = players;
+    });
+  }
+  void SetUnready(){
+    setState(() {
+      ready = false;
+    });
+  }
   void _onRunPressed() {
-    // Action du bouton RUN (peut être modifiée plus tard)
+    print('ss');
+    if(ready==false){print('rr');return;}
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => MatchSimulationScreen(userPlayers:userPlayers,)),
+    );
   }
 
   @override
@@ -46,7 +65,7 @@ class HomeScreenState extends State<HomeScreen> {
           ),
           Positioned.fill(
             child: _selectedIndex == 0
-                ? const HomeWidget() // 🔹 HomeWidget gère ses propres données
+                ?  HomeWidget(SetReady:SetReady,SetUnready:SetUnready) // 🔹 HomeWidget gère ses propres données
                 : const LeaderboardWidget(),
           ),
         ],
@@ -55,7 +74,7 @@ class HomeScreenState extends State<HomeScreen> {
       // 🔹 Bouton RUN
       floatingActionButton: FloatingActionButton(
         onPressed: _onRunPressed,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.indigoAccent,
         shape: const CircleBorder(),
         child: const Text(
           "RUN",

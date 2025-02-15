@@ -4,9 +4,9 @@ class LeaderboardService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String leaderboardDocId = "W5y6yNzXoNMoo3ZDAyG9"; // ID du document dans Firestore
 
-  Future<void> updateLeaderboard(String username, int newScore) async {
+  Future<void> updateLeaderboard(String? username, int newScore) async {
     try {
-      DocumentReference leaderboardRef = _firestore.collection('leaderboard').doc(leaderboardDocId);
+      DocumentReference leaderboardRef = _firestore.collection('leaderBoard').doc(leaderboardDocId);
 
       DocumentSnapshot snapshot = await leaderboardRef.get();
       List<dynamic> leaderboard = [];
